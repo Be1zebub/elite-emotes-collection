@@ -42,6 +42,18 @@
 			return child;
 		}
 
+		function isInViewport(elem) {
+		    const rect = elem.getBoundingClientRect();
+		    const vw = (window.innerWidth || document.documentElement.clientWidth);
+		    const vh = (window.innerHeight || document.documentElement.clientHeight);
+		    return (
+		        rect.top >= 0 &&
+		        rect.left >= 0 &&
+		        rect.bottom <= vh &&
+		        rect.right <= vw
+		    );
+		}
+
 		function CreateFolder(name) {
 			let dir = document.body.layout.Add("div");
 			dir.className = "accordion-item";
@@ -70,19 +82,24 @@
 		}
 
 		function CreateFile(file, dir) {
-			let img = document.getElementById(dir).content.Add("img");
-			img.className = "emote";
-			img.height = 96;
-			img.style.margin = "4px";
-			img.style.transition = "0.5s";
-			img.setAttribute("path", file.path);
-			img.setAttribute("data-bs-toggle", "tooltip");
-			img.setAttribute("data-bs-html", "true");
-			img.setAttribute("data-bs-placement", "top");
-			img.setAttribute("title", file.path.split("/").slice(-1).join().split(".").shift());
-			img._tooltip = new bootstrap.Tooltip(img);
-			img.setAttribute("loading", "lazy");
-			img.src = `https://github.com/${user}/elite-emotes-collection/blob/${brach}/${file.path}?raw=true`;
+			let parent = document.getElementById(dir).content;
+			setTimeout(function() {
+				let img = parent.Add("img");
+				img.className = "emote";
+				img.height = 96;
+				img.style.margin = "4px";
+				img.style.opacity = 0;
+				img.style.transition = "0.5s";
+				img.setAttribute("loading", "lazy");
+				img.setAttribute("path", file.path);
+				img.setAttribute("data-bs-toggle", "tooltip");
+				img.setAttribute("data-bs-html", "true");
+				img.setAttribute("data-bs-placement", "top");
+				img.setAttribute("title", file.path.split("/").slice(-1).join().split(".").shift());
+				img._tooltip = new bootstrap.Tooltip(img);
+				img.setAttribute("src", `https://github.com/${user}/elite-emotes-collection/blob/${brach}/${file.path}?raw=true`);
+				img.style.opacity = 1;
+			}, parent.children.length * 500);
 		}
 
 		var xhr = new XMLHttpRequest();
@@ -108,11 +125,30 @@
 		};
 		xhr.send();
 
-		document.getElementById("search_input").addEventListener("input", function() {
+		document.getElementById("search_input").addEventListener("keyup", function() {
 			let userinput = this.value;
+			let has_visible_in_view = false;
+			let emotes = document.querySelectorAll(".emote");
 
-			document.querySelectorAll(".emote").forEach(function(emote) {
-			    emote.style.opacity = emote.getAttribute("data-bs-original-title").match(userinput) ? 1 : 0.25;
+			//for (i = 0; i < emotes.length; ++i) {
+			//	if (emotes[i].getAttribute("data-bs-original-title").match(userinput)) {
+			//		has_visible_in_view = true;
+			//		break;
+			//	}
+			//}
+
+			emotes.forEach(function(emote) {
+				let is_visible = emote.getAttribute("data-bs-original-title").match(userinput);
+			    emote.style.opacity = is_visible ? 1 : 0.25;
+
+			    if (is_visible && has_visible_in_view == false) {
+			    	if (isInViewport(emote)) {
+			    		has_visible_in_view = true;
+			    	} else {
+			    		emote.scrollIntoView({block: "center"});
+			    		has_visible_in_view = true;
+			    	}
+			    }
 			});
 		}, false);
 	</script>
