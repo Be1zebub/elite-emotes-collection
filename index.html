@@ -33,7 +33,7 @@
 		var repo = "elite-emotes-collection";
 		var brach = "main";
 
-		HTMLElement.prototype.Add = function(tag, eclass){ 
+		HTMLElement.prototype.Add = function(tag, eclass){
 			let child = document.createElement(tag);
 			if (eclass) {
 				child.className = eclass;
@@ -43,15 +43,15 @@
 		}
 
 		function isInViewport(elem) {
-		    const rect = elem.getBoundingClientRect();
-		    const vw = (window.innerWidth || document.documentElement.clientWidth);
-		    const vh = (window.innerHeight || document.documentElement.clientHeight);
-		    return (
-		        rect.top >= 0 &&
-		        rect.left >= 0 &&
-		        rect.bottom <= vh &&
-		        rect.right <= vw
-		    );
+			const rect = elem.getBoundingClientRect();
+			const vw = (window.innerWidth || document.documentElement.clientWidth);
+			const vh = (window.innerHeight || document.documentElement.clientHeight);
+			return (
+				rect.top >= 0 &&
+				rect.left >= 0 &&
+				rect.bottom <= vh &&
+				rect.right <= vw
+			);
 		}
 
 		function CreateFolder(name) {
@@ -62,7 +62,7 @@
 			dir.h2 = dir.Add("h2");
 			dir.h2.className = "accordion-header";
 			dir.h2.id = `header_${name}`;
-			
+
 			dir.h2.button = dir.h2.Add("button");
 			dir.h2.button.className = "accordion-button";
 			dir.h2.button.type = "button";
@@ -97,58 +97,71 @@
 				img.setAttribute("data-bs-placement", "top");
 				img.setAttribute("title", file.path.split("/").slice(-1).join().split(".").shift());
 				img._tooltip = new bootstrap.Tooltip(img);
+				img.addEventListener("error", function() {
+					img.setAttribute("src", "https://i.imgur.com/Tv5gVDO.jpg");
+				});
 				img.setAttribute("src", `https://github.com/${user}/elite-emotes-collection/blob/${brach}/${file.path}?raw=true`);
 				img.style.opacity = 1;
 			}, parent.children.length * 500);
 		}
 
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", `https://api.github.com/repos/${user}/${repo}/git/trees/${brach}?recursive=1`, true);
-		xhr.responseType = "json";
-		xhr.onload = function() {
-			if (xhr.status === 200) {
-				document.body.layout = document.body.Add("div");
-				document.body.layout.className = "accordion";
-				document.body.layout.id = "accordion";
+		function CreateEmotes(request) {
+			document.body.layout = document.body.Add("div");
+			document.body.layout.className = "accordion";
+			document.body.layout.id = "accordion";
 
-				let resp = xhr.response;
-				resp.tree.forEach(function(item) {
-					if (item.type == "tree") {
-						CreateFolder(item.path);
-					} else if (item.path.endsWith(".png")) {
-						CreateFile(item, item.path.match(/(.*)[\/\\]/)[1]||'');
-					};
-				});
-			} else {
-				console.log(xhr.status, xhr.response);
-			}
-		};
-		xhr.send();
+			let resp = request.response;
+			resp.tree.forEach(function(item) {
+				if (item.type == "tree") {
+					CreateFolder(item.path);
+				} else if (item.path.endsWith(".png")) {
+					CreateFile(item, item.path.match(/(.*)[\/\\]/)[1]||'');
+				};
+			});
+		}
+
+		function FetchEmotes() {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", `https://api.github.com/repos/${user}/${repo}/git/trees/${brach}?recursive=1`, true);
+			xhr.responseType = "json";
+			xhr.onload = function() {
+				if (xhr.status === 200) {
+					CreateEmotes(xhr);
+				} else {
+					console.log(xhr.status, xhr.response);
+					let remaining_ratelimit = parseInt(xhr.getResponseHeader("x-ratelimit-remaining")) + 1;
+					setTimeout(FetchEmotes, remaining_ratelimit * 1000);
+					alert(`ewww, you hit github api ratelimits 😟\nw8 for ${remaining_ratelimit} seconds and page will loaded.\nnext time refresh the page not so often, github api has api bandwidth limitations.`);
+				}
+			};
+			xhr.send();
+		}
+		FetchEmotes();
 
 		document.getElementById("search_input").addEventListener("keyup", function() {
 			let userinput = this.value;
 			let has_visible_in_view = false;
 			let emotes = document.querySelectorAll(".emote");
 
-			//for (i = 0; i < emotes.length; ++i) {
-			//	if (emotes[i].getAttribute("data-bs-original-title").match(userinput)) {
-			//		has_visible_in_view = true;
-			//		break;
-			//	}
-			//}
+			for (i = 0; i < emotes.length; ++i) {
+				if (emotes[i].getAttribute("data-bs-original-title").match(userinput) && isInViewport(emotes[i])) {
+					has_visible_in_view = true;
+					break;
+				}
+			}
 
 			emotes.forEach(function(emote) {
 				let is_visible = emote.getAttribute("data-bs-original-title").match(userinput);
-			    emote.style.opacity = is_visible ? 1 : 0.25;
+				emote.style.opacity = is_visible ? 1 : 0.25;
 
-			    if (is_visible && has_visible_in_view == false) {
-			    	if (isInViewport(emote)) {
-			    		has_visible_in_view = true;
-			    	} else {
-			    		emote.scrollIntoView({block: "center"});
-			    		has_visible_in_view = true;
-			    	}
-			    }
+				if (is_visible && has_visible_in_view == false) {
+					if (isInViewport(emote)) {
+						has_visible_in_view = true;
+					} else {
+						emote.scrollIntoView({block: "center"});
+						has_visible_in_view = true;
+					}
+				}
 			});
 		}, false);
 	</script>
