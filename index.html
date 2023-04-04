@@ -80,8 +80,6 @@
 			dir.content = dir.div.Add("div");
 			dir.content.className = "accordion-body";
 		}
-		
-		var img_errors = 0;
 
 		function CreateFile(file, dir) {
 			let parent = document.getElementById(dir).content;
@@ -102,17 +100,13 @@
 				img.addEventListener("error", function() {
 					let src = img.src;
 					img.setAttribute("src", "https://i.imgur.com/Tv5gVDO.jpg");
-					
-					img_errors = img_errors + 1;
-					
-					setTimeout(function() {
-					    img.setAttribute("src", src);
-					}, 350 * img_errors);
 				});
 				img.setAttribute("src", `https://github.com/${user}/elite-emotes-collection/blob/${brach}/${file.path}?raw=true`);
 				img.style.opacity = 1;
 			}, parent.children.length * 500);
 		}
+		
+		let image_count = 0;
 
 		function CreateEmotes(request) {
 			document.body.layout = document.body.Add("div");
@@ -124,7 +118,10 @@
 				if (item.type == "tree") {
 					CreateFolder(item.path);
 				} else if (item.path.endsWith(".png")) {
-					CreateFile(item, item.path.match(/(.*)[\/\\]/)[1]||'');
+					image_count = image_count + 1;
+					setTimeout(function() {
+					    CreateFile(item, item.path.match(/(.*)[\/\\]/)[1]||'');
+					}, 200 * image_count);
 				};
 			});
 		}
