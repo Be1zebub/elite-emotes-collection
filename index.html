@@ -118,10 +118,10 @@
 				if (item.type == "tree") {
 					CreateFolder(item.path);
 				} else if (item.path.endsWith(".png")) {
-					image_count = image_count + 1;
 					setTimeout(function() {
 					    CreateFile(item, item.path.match(/(.*)[\/\\]/)[1]||'');
 					}, 200 * image_count);
+					image_count = image_count + 1;
 				};
 			});
 		}
